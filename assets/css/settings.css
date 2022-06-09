@@ -153,3 +153,10 @@ span.post-expiration-attributes {
 .pe-event-post {
 	cursor: help;
 }
+
+
+#pe-settings-tabs input.invalid {
+    border: 1px solid #b15b5b;
+    background-color: #ffdede;
+	box-sizing: border-box;
+}
