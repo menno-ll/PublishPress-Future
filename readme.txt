@@ -5,7 +5,7 @@ Author URI: https://publishpress.com
 Tags: expire, posts, pages, schedule
 Requires at least: 5.3
 Tested up to: 6.0
-Stable tag: 2.7.4
+Stable tag: 2.7.5
 
 Add an expiration date to posts. When your post is automatically unpublished, you can delete the post, change the status, or update the post categories.
 
@@ -80,6 +80,11 @@ This section describes how to install the plugin and get it working.
 3. Settings screen
 
 == Changelog ==
+
+= [2.7.5] - 09 Jun, 2022 =
+
+* FIXED: Fix undefined array key "hook_suffix" warning, #259;
+* FIXED: Double email sending bug confirmed bug, #204;
 
 = [2.7.4] - 07 Jun, 2022 =
 

@@ -4,7 +4,7 @@
 * Plugin URI: http://wordpress.org/extend/plugins/post-expirator/
 * Description: Allows you to add an expiration date (minute) to posts which you can configure to either delete the post, change it to a draft, or update the post categories at expiration time.
 * Author: PublishPress
- * Version: 2.7.4
+ * Version: 2.7.5
 * Author URI: http://publishpress.com
 * Text Domain: post-expirator
 * Domain Path: /languages
@@ -27,7 +27,7 @@ if (class_exists('PublishPressInstanceProtection\\Config')) {
 
 if (! defined('POSTEXPIRATOR_LOADED')) {
     // Default Values
-    define('POSTEXPIRATOR_VERSION', '2.7.4');
+    define('POSTEXPIRATOR_VERSION', '2.7.5');
     define('POSTEXPIRATOR_DATEFORMAT', __('l F jS, Y', 'post-expirator'));
     define('POSTEXPIRATOR_TIMEFORMAT', __('g:ia', 'post-expirator'));
     define('POSTEXPIRATOR_FOOTERCONTENTS', __('Post expires at EXPIRATIONTIME on EXPIRATIONDATE', 'post-expirator'));
@@ -801,6 +801,8 @@ if (! defined('POSTEXPIRATOR_LOADED')) {
 
         $id = (int)$id;
 
+        $debug->save(array('message' => 'Called postexpirator_expire_post with id=' . $id));
+
         if (empty($id)) {
             if (POSTEXPIRATOR_DEBUG) {
                 $debug->save(array('message' => 'No Post ID found - exiting'));
@@ -1367,6 +1369,7 @@ if (! defined('POSTEXPIRATOR_LOADED')) {
             );
 
             $emailsToSend = array();
+
             // Get Blog Admins
             $blogAdmins = get_option('expirationdateEmailNotificationAdmins', POSTEXPIRATOR_EMAILNOTIFICATIONADMINS);
             // phpcs:ignore WordPress.PHP.StrictComparisons.LooseComparison
@@ -1395,15 +1398,21 @@ if (! defined('POSTEXPIRATOR_LOADED')) {
                 }
             }
 
-            // Send Emails
-            foreach ($emailsToSend as $email) {
-                if (wp_mail($email, sprintf(__('[%1$s] %2$s'), get_option('blogname'), $emailSubject), $emailBody)) {
-                    if (POSTEXPIRATOR_DEBUG) {
-                        $debug->save(array('message' => $id . ' -> EXPIRATION EMAIL SENT (' . $email . ')'));
-                    }
-                } else {
-                    if (POSTEXPIRATOR_DEBUG) {
-                        $debug->save(array('message' => $id . ' -> EXPIRATION EMAIL FAILED (' . $email . ')'));
+            $emailsToSend = array_unique($emailsToSend);
+
+            if (! empty($emailsToSend)) {
+                $debug->save(array('message' => $id . ' -> SENDING EMAIL TO (' . implode(', ', $emailsToSend) . ')'));
+
+                // Send Emails
+                foreach ($emailsToSend as $email) {
+                    if (wp_mail($email, sprintf(__('[%1$s] %2$s'), get_option('blogname'), $emailSubject), $emailBody)) {
+                        if (POSTEXPIRATOR_DEBUG) {
+                            $debug->save(array('message' => $id . ' -> EXPIRATION EMAIL SENT (' . $email . ')'));
+                        }
+                    } else {
+                        if (POSTEXPIRATOR_DEBUG) {
+                            $debug->save(array('message' => $id . ' -> EXPIRATION EMAIL FAILED (' . $email . ')'));
+                        }
                     }
                 }
             }
@@ -2103,12 +2112,11 @@ if (! defined('POSTEXPIRATOR_LOADED')) {
     function postexpirator_date_save_bulk_edit()
     {
         // Save Bulk edit data
-        $wpListTable = _get_list_table('WP_Posts_List_Table');
-        $doaction = $wpListTable->current_action();
+        $doAction = isset($_GET['action']) ? sanitize_key($_GET['action']) : '';
         $facade = PostExpirator_Facade::getInstance();
 
         if (
-            'edit' !== $doaction
+            'edit' !== $doAction
             || ! isset($_REQUEST['postexpirator_view'])
             || $_REQUEST['postexpirator_view'] !== 'bulk-edit'
             || ! isset($_REQUEST['expirationdate_status'])
